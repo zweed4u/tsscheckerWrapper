@@ -1,0 +1,8 @@
+# Modify this file and save it as config.cfg
+
+[device]
+deviceIdentifier = #eg. iPhone6,1
+ecid = #dec or hex XXXXXXXXXXXX
+
+[ssh]
+password = #ssh loopback password for login
