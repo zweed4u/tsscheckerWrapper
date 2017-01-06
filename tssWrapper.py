@@ -604,9 +604,9 @@ def tsscheckSweep(myDeviceLUT, binaryPath, deviceId, ecid):
 		stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s | grep signed')
 		output=stdout.read().split('\n')[0]
 		if 'IS being signed' in output:
-			print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version + '          [✓]'
+			print str(datetime.datetime.now().time()) + ' :: '+output+' :: '+ version + '          [✓]'
 		else:
-			print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version
+			print str(datetime.datetime.now().time()) + ' :: '+output+' :: '+ version
 	except Exception as e:
 		#quit here the identifier provided by config is not in the device info dictionary
 		print str(e)
