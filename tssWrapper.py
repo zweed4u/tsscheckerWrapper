@@ -1,10 +1,13 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 #Git pull tsschecker/download compiled zip
 #mac or linux binary
 #os detection using os.environ? for name/file call
 #implement find tsschecker folder or download it 
 #implement threading and blobs to save to designated destination (tsschecker command? cd?)
 
-import os, getpass, paramiko, ConfigParser
+import os, time, getpass, datetime, paramiko, ConfigParser
 # Get the project directory to avoid using relative paths
 PROJECT_ROOT_DIR = os.getcwd()
 
@@ -582,12 +585,20 @@ ssh=paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 ssh.connect('127.0.0.1', 22, os.getlogin(), user_config.pwd)
 ssh.exec_command('cd '+PROJECT_ROOT_DIR)
-
+start=time.time()
 try: 
 	for version in deviceInfo[user_config.deviceIdentifier].keys():
 		stdin, stdout, stderr = ssh.exec_command(tsscheckerBinPath+' -d '+user_config.deviceIdentifier+' -e '+user_config.ecid+' -i '+version+' --buildid '+deviceInfo[user_config.deviceIdentifier][version]+' -s | grep signed')
-		print version + ':: '+stdout.read()
+		output=stdout.read().split('\n')[0]
+		if 'IS being signed' in output:
+			print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version + '          [✓]'
+		else:
+			print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version
+
 except Exception as e:
 	#quit here the identifier provided by config is not in the device info dictionary
 	print str(e)
 	pass
+end=time.time()
+print
+print 'Completed in: '+str(end-start)+' seconds...'
