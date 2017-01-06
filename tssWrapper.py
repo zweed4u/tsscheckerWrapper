@@ -581,14 +581,25 @@ deviceInfo={
 
 tsscheckerBinPath = os.path.join(PROJECT_ROOT_DIR, 'tsschecker_linux')
 
-ssh=paramiko.SSHClient()
-ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-ssh.connect('127.0.0.1', 22, os.getlogin(), user_config.pwd)
-ssh.exec_command('cd '+PROJECT_ROOT_DIR)
+class SSH:
+	ssh=paramiko.SSHClient()
+	ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+	def __init__(self, address, port, user, passwd):
+		self.address = address
+		self.port = port
+		self.user = user
+		self.passwd = passwd
+	def connect(self):
+		SSH.ssh.connect(self.address,self.port,self.user,self.passwd)
+
+local_ssh=SSH('127.0.0.1', 22, os.getlogin(), user_config.pwd)
+local_ssh.connect()
+local_ssh.ssh.exec_command('cd '+PROJECT_ROOT_DIR)
 start=time.time()
+
 try: 
 	for version in deviceInfo[user_config.deviceIdentifier].keys():
-		stdin, stdout, stderr = ssh.exec_command(tsscheckerBinPath+' -d '+user_config.deviceIdentifier+' -e '+user_config.ecid+' -i '+version+' --buildid '+deviceInfo[user_config.deviceIdentifier][version]+' -s | grep signed')
+		stdin, stdout, stderr = local_ssh.ssh.exec_command(tsscheckerBinPath+' -d '+user_config.deviceIdentifier+' -e '+user_config.ecid+' -i '+version+' --buildid '+deviceInfo[user_config.deviceIdentifier][version]+' -s | grep signed')
 		output=stdout.read().split('\n')[0]
 		if 'IS being signed' in output:
 			print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version + '          [✓]'
