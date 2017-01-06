@@ -21,7 +21,17 @@ class Config:
     ecid = c.get('device', 'ecid')
     deviceIdentifier = c.get('device', 'deviceIdentifier')
     pwd = c.get('ssh','password')
-user_config = Config()
+
+class SSH:
+	ssh=paramiko.SSHClient()
+	ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+	def __init__(self, address, port, user, passwd):
+		self.address = address
+		self.port = port
+		self.user = user
+		self.passwd = passwd
+	def connect(self):
+		SSH.ssh.connect(self.address,self.port,self.user,self.passwd)
 
 deviceInfo={
 	'iPhone1,1':{ #iphone 2g
@@ -581,35 +591,31 @@ deviceInfo={
 
 tsscheckerBinPath = os.path.join(PROJECT_ROOT_DIR, 'tsschecker_linux')
 
-class SSH:
-	ssh=paramiko.SSHClient()
-	ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-	def __init__(self, address, port, user, passwd):
-		self.address = address
-		self.port = port
-		self.user = user
-		self.passwd = passwd
-	def connect(self):
-		SSH.ssh.connect(self.address,self.port,self.user,self.passwd)
-
-local_ssh=SSH('127.0.0.1', 22, os.getlogin(), user_config.pwd)
+user_config = Config()
+local_ssh = SSH('127.0.0.1', 22, os.getlogin(), user_config.pwd)
 local_ssh.connect()
 local_ssh.ssh.exec_command('cd '+PROJECT_ROOT_DIR)
+
+#need to adjust this function so that threads are made in for loop
+def tsscheckSweep(myDeviceLUT, binaryPath, deviceId, ecid):
+	try: 
+		for version in myDeviceLUT.keys():
+			stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s | grep signed')
+			output=stdout.read().split('\n')[0]
+			if 'IS being signed' in output:
+				print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version + '          [✓]'
+			else:
+				print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version
+
+	except Exception as e:
+		#quit here the identifier provided by config is not in the device info dictionary
+		print str(e)
+		pass
+
 start=time.time()
-
-try: 
-	for version in deviceInfo[user_config.deviceIdentifier].keys():
-		stdin, stdout, stderr = local_ssh.ssh.exec_command(tsscheckerBinPath+' -d '+user_config.deviceIdentifier+' -e '+user_config.ecid+' -i '+version+' --buildid '+deviceInfo[user_config.deviceIdentifier][version]+' -s | grep signed')
-		output=stdout.read().split('\n')[0]
-		if 'IS being signed' in output:
-			print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version + '          [✓]'
-		else:
-			print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version
-
-except Exception as e:
-	#quit here the identifier provided by config is not in the device info dictionary
-	print str(e)
-	pass
+#need to have for loop of lut keys here.
+#make a thread for each version
+tsscheckSweep(deviceInfo[user_config.deviceIdentifier], tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid)
 end=time.time()
 print
 print 'Completed in: '+str(end-start)+' seconds...'
