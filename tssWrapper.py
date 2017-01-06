@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+#swap from threading on ssh to process
 #Git pull tsschecker/download compiled zip
 #mac or linux binary
 #os detection using os.environ? for name/file call
 #implement find tsschecker folder or download it 
 #implement threading and blobs to save to designated destination (tsschecker command? cd?)
 
-import os, time, getpass, datetime, paramiko, ConfigParser
+import os, time, getpass, datetime, paramiko, threading, ConfigParser
 # Get the project directory to avoid using relative paths
 PROJECT_ROOT_DIR = os.getcwd()
 
@@ -591,31 +592,37 @@ deviceInfo={
 
 tsscheckerBinPath = os.path.join(PROJECT_ROOT_DIR, 'tsschecker_linux')
 
-user_config = Config()
-local_ssh = SSH('127.0.0.1', 22, os.getlogin(), user_config.pwd)
-local_ssh.connect()
-local_ssh.ssh.exec_command('cd '+PROJECT_ROOT_DIR)
+
 
 #need to adjust this function so that threads are made in for loop
 def tsscheckSweep(myDeviceLUT, binaryPath, deviceId, ecid):
-	try: 
-		for version in myDeviceLUT.keys():
-			stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s | grep signed')
-			output=stdout.read().split('\n')[0]
-			if 'IS being signed' in output:
-				print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version + '          [✓]'
-			else:
-				print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version
+	try:
+		local_ssh = SSH('127.0.0.1', 22, os.getlogin(), user_config.pwd)
+		local_ssh.connect()
+		local_ssh.ssh.exec_command('cd '+PROJECT_ROOT_DIR)
 
+		stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s | grep signed')
+		output=stdout.read().split('\n')[0]
+		if 'IS being signed' in output:
+			print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version + '          [✓]'
+		else:
+			print str(datetime.datetime.now()) + ' :: '+output+' :: '+ version
 	except Exception as e:
 		#quit here the identifier provided by config is not in the device info dictionary
 		print str(e)
 		pass
-
-start=time.time()
-#need to have for loop of lut keys here.
-#make a thread for each version
-tsscheckSweep(deviceInfo[user_config.deviceIdentifier], tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid)
-end=time.time()
-print
-print 'Completed in: '+str(end-start)+' seconds...'
+	
+if __name__ == '__main__':
+	"""
+	Main slots controller
+	"""
+	user_config = Config()
+	start=time.time()
+	paramiko.util.log_to_file("filename.log")
+	for version in deviceInfo[user_config.deviceIdentifier].keys():
+		print version, 'Thread initialized!'
+		t = threading.Thread(target=tsscheckSweep, args=(deviceInfo[user_config.deviceIdentifier], tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid,))
+		t.start()
+	end=time.time()
+	print
+	print 'Completed in: '+str(end-start)+' seconds...'
