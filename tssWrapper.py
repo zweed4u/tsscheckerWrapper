@@ -12,7 +12,7 @@
 #implement find tsschecker folder or download it 
 #implement threading and blobs to save to designated destination (tsschecker command? cd?)
 
-import os, time, getpass, datetime, paramiko, threading, ConfigParser
+import os, getpass, datetime, paramiko, threading, ConfigParser
 # Get the project directory to avoid using relative paths
 PROJECT_ROOT_DIR = os.getcwd()
 
@@ -599,9 +599,8 @@ tsscheckerBinPath = os.path.join(PROJECT_ROOT_DIR, 'tsschecker_linux')
 
 
 #need to adjust this function so that threads are made in for loop
-def tsscheckSweep(myDeviceLUT, binaryPath, deviceId, ecid):
+def tsscheckSweep(version, myDeviceLUT, binaryPath, deviceId, ecid):
 	try:
-		
 		#local_ssh.ssh.exec_command('cd '+PROJECT_ROOT_DIR)
 		stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s | grep signed')
 		output=stdout.read().split('\n')[0]
@@ -621,12 +620,8 @@ if __name__ == '__main__':
 	user_config = Config()
 	local_ssh = SSH('127.0.0.1', 22, os.getlogin(), user_config.pwd)
 	local_ssh.connect()
-	start=time.time()
 	for version in deviceInfo[user_config.deviceIdentifier].keys():
-		
 		print version, 'Thread initialized!'
-		t = threading.Thread(target=tsscheckSweep, args=(deviceInfo[user_config.deviceIdentifier], tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid,))
+		t = threading.Thread(target=tsscheckSweep, args=(version, deviceInfo[user_config.deviceIdentifier], tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid,))
 		t.start()
-	end=time.time()
 	print
-	print 'Completed in: '+str(end-start)+' seconds...'
