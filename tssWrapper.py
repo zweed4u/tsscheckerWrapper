@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+#edit sshd_config in authentication:
+#eg. MaxSessions 20
+#MaxSessions len(number of versions)
+#Fix version display in threads always prints same version
 #swap from threading on ssh to process
 #Git pull tsschecker/download compiled zip
 #mac or linux binary
@@ -597,10 +601,8 @@ tsscheckerBinPath = os.path.join(PROJECT_ROOT_DIR, 'tsschecker_linux')
 #need to adjust this function so that threads are made in for loop
 def tsscheckSweep(myDeviceLUT, binaryPath, deviceId, ecid):
 	try:
-		local_ssh = SSH('127.0.0.1', 22, os.getlogin(), user_config.pwd)
-		local_ssh.connect()
-		local_ssh.ssh.exec_command('cd '+PROJECT_ROOT_DIR)
-
+		
+		#local_ssh.ssh.exec_command('cd '+PROJECT_ROOT_DIR)
 		stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s | grep signed')
 		output=stdout.read().split('\n')[0]
 		if 'IS being signed' in output:
@@ -617,9 +619,11 @@ if __name__ == '__main__':
 	Main slots controller
 	"""
 	user_config = Config()
+	local_ssh = SSH('127.0.0.1', 22, os.getlogin(), user_config.pwd)
+	local_ssh.connect()
 	start=time.time()
-	paramiko.util.log_to_file("filename.log")
 	for version in deviceInfo[user_config.deviceIdentifier].keys():
+		
 		print version, 'Thread initialized!'
 		t = threading.Thread(target=tsscheckSweep, args=(deviceInfo[user_config.deviceIdentifier], tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid,))
 		t.start()
