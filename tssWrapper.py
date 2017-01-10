@@ -597,10 +597,10 @@ local_ssh.connect()
 local_ssh.ssh.exec_command('cd '+PROJECT_ROOT_DIR)
 
 #need to adjust this function so that threads are made in for loop
-def tsscheckSweep(myDeviceLUT, binaryPath, deviceId, ecid):
+def tsscheckSweep(myDeviceLUT, projectFolder, binaryPath, deviceId, ecid):
 	try: 
 		for version in myDeviceLUT.keys():
-			stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s | grep signed')
+			stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s --save-path '+projectFolder+' | grep signed')
 			output=stdout.read().split('\n')[0]
 			if 'IS being signed' in output:
 				print str(datetime.datetime.now().time()) + ' :: '+output+' :: '+ version + '          [✓]'
@@ -615,7 +615,7 @@ def tsscheckSweep(myDeviceLUT, binaryPath, deviceId, ecid):
 start=time.time()
 #need to have for loop of lut keys here.
 #make a thread for each version
-tsscheckSweep(deviceInfo[user_config.deviceIdentifier], tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid)
+tsscheckSweep(deviceInfo[user_config.deviceIdentifier], PROJECT_ROOT_DIR, tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid)
 end=time.time()
 print
 print 'Completed in: '+str(end-start)+' seconds...'
