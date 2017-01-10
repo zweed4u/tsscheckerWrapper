@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
+#add option for installation/build from git 
 
+#include save path option
 #edit sshd_config in authentication:
 #eg. MaxSessions 20
 #MaxSessions len(number of versions)
@@ -599,10 +601,10 @@ tsscheckerBinPath = os.path.join(PROJECT_ROOT_DIR, 'tsschecker_linux')
 
 
 #need to adjust this function so that threads are made in for loop
-def tsscheckSweep(version, myDeviceLUT, binaryPath, deviceId, ecid):
+def tsscheckSweep(version, myDeviceLUT, projectFolder, binaryPath, deviceId, ecid):
 	try:
 		#local_ssh.ssh.exec_command('cd '+PROJECT_ROOT_DIR)
-		stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s | grep signed')
+		stdin, stdout, stderr = local_ssh.ssh.exec_command(binaryPath+' -d '+deviceId+' -e '+ecid+' -i '+version+' --buildid '+myDeviceLUT[version]+' -s --save-path '+projectFolder+' | grep signed')
 		output=stdout.read().split('\n')[0]
 		if 'IS being signed' in output:
 			print str(datetime.datetime.now().time()) + ' :: '+output+' :: '+ version + '          [✓]'
@@ -622,6 +624,6 @@ if __name__ == '__main__':
 	local_ssh.connect()
 	for version in deviceInfo[user_config.deviceIdentifier].keys():
 		print version, 'Thread initialized!'
-		t = threading.Thread(target=tsscheckSweep, args=(version, deviceInfo[user_config.deviceIdentifier], tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid,))
+		t = threading.Thread(target=tsscheckSweep, args=(version, deviceInfo[user_config.deviceIdentifier], PROJECT_ROOT_DIR, tsscheckerBinPath, user_config.deviceIdentifier, user_config.ecid,))
 		t.start()
 	print
