@@ -2,7 +2,8 @@
 # -*- coding: UTF-8 -*-
 #add option for installation/build from git 
 
-#include save path option
+#include save path option and move to allow for multiple saves of same version blob
+#implement for loop to download multiples put this number in config and pull with parser
 #edit sshd_config in authentication:
 #eg. MaxSessions 20
 #MaxSessions len(number of versions)
