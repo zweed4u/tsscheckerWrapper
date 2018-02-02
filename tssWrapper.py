@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 # add option for installation/build from git
 
@@ -22,13 +22,13 @@ import requests
 import datetime
 import paramiko
 import threading
-import ConfigParser
+import configparser
 
 # Get the project directory to avoid using relative paths
 PROJECT_ROOT_DIR = os.getcwd()
 
 # Parse configuration file
-c = ConfigParser.ConfigParser()
+c = configparser.ConfigParser()
 configFilePath = os.path.join(PROJECT_ROOT_DIR, 'config.cfg')
 c.read(configFilePath)
 
@@ -78,16 +78,16 @@ def tsscheckSweep(version, myDeviceLUT, projectFolder, binaryPath, deviceId,
             binaryPath + ' -d ' + deviceId + ' -e ' + ecid + ' -i ' + version + ' --buildid ' +
             myDeviceLUT[
                 version] + ' -s --save-path ' + projectFolder + ' | grep signed')
-        output = stdout.read().split('\n')[0]
+        output = stdout.read().decode().split('\n')[0]
         if 'IS being signed' in output:
-            print str(
-                datetime.datetime.now().time()) + ' :: ' + output + ' :: ' + version + '          [✓]'
+            print(str(
+                datetime.datetime.now().time()) + ' :: ' + output + ' :: ' + version + '          [✓]')
         else:
-            print str(
-                datetime.datetime.now().time()) + ' :: ' + output + ' :: ' + version
+            print(str(
+                datetime.datetime.now().time()) + ' :: ' + output + ' :: ' + version)
     except Exception as e:
         # quit here the identifier provided by config is not in the device info dictionary
-        print str(e)
+        print(str(e))
         pass
 
 
@@ -99,11 +99,11 @@ if __name__ == '__main__':
     local_ssh = SSH('127.0.0.1', 22, os.getlogin(), user_config.pwd)
     local_ssh.connect()
     for version in deviceInfo[user_config.deviceIdentifier].keys():
-        print version, 'Thread initialized!'
+        print(version, 'Thread initialized!')
         t = threading.Thread(target=tsscheckSweep, args=(
             version, deviceInfo[user_config.deviceIdentifier],
             PROJECT_ROOT_DIR,
             tsscheckerBinPath, user_config.deviceIdentifier,
             user_config.ecid,))
         t.start()
-    print
+    print('')
